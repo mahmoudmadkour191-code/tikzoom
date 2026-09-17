@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: "*/5 * * * *"
 
+permissions:
+  contents: write
+  actions: read
+
 concurrency:
   group: tikzoom-main
   cancel-in-progress: false
@@ -47,7 +51,6 @@ jobs:
         run: |
           test -f templates_data.tar.gz
           tar -xzf templates_data.tar.gz -C app
-          ls app/templates_data | head -5
           echo "templates extracted: $(ls app/templates_data | wc -l)"
 
       - name: Restore persistent state (db + user bots)
@@ -56,7 +59,7 @@ jobs:
           mkdir -p data bots_storage
           bash scripts/state_sync.sh pull
 
-      - name: Run TikZoom (polling mode)
+      - name: Run TikZoom (polling mode + boot proof)
         if: steps.guard.outputs.skip != '1'
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
@@ -68,7 +71,21 @@ jobs:
           TIKZOOM_SANDBOX: host
           PORT: "8080"
         run: |
-          timeout 330m python -m uvicorn app.main:app --host 127.0.0.1 --port 8080 || true
+          mkdir -p data
+          rm -f data/boot_status.txt
+          python -m uvicorn app.main:app --host 127.0.0.1 --port 8080 > data/uvicorn.log 2>&1 &
+          UV_PID=$!
+          sleep 40
+          {
+            echo "=== boot proof $(date -u +%FT%TZ) ==="
+            echo "healthz: $(curl -s -m 5 http://127.0.0.1:8080/healthz || echo FAIL)"
+            echo "ext_getUpdates: $(curl -s -m 10 "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?timeout=0" | head -c 300)"
+            echo "--- uvicorn.log tail ---"
+            tail -60 data/uvicorn.log
+          } >> data/boot_status.txt 2>&1
+          cat data/boot_status.txt
+          bash scripts/state_sync.sh push || true
+          wait $UV_PID || true
 
       - name: Save persistent state
         if: always() && steps.guard.outputs.skip != '1'
