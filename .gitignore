@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+data/logs/
+data/broadcasts/
+*.db-wal
+*.db-shm
+deps.log
+.venv/
+app/templates_data/

@@ -1,0 +1,77 @@
+name: TikZoom Runner
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+concurrency:
+  group: tikzoom-main
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Guard — skip if a run is already active
+        id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          WF="tikzoom.yml"
+          INPROG=$(gh api "repos/${{ github.repository }}/actions/workflows/$WF/runs?status=in_progress&per_page=100" --jq '.total_count')
+          echo "in_progress=$INPROG"
+          if [ "$INPROG" -gt 1 ]; then
+            for RID in $(gh api "repos/${{ github.repository }}/actions/workflows/$WF/runs?status=queued&per_page=100" --jq '.workflow_runs[].id' 2>/dev/null || true); do
+              gh api -X POST "repos/${{ github.repository }}/actions/runs/$RID/cancel" >/dev/null 2>&1 || true
+            done
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.guard.outputs.skip != '1'
+        with:
+          python-version: "3.12"
+
+      - name: Install platform dependencies
+        if: steps.guard.outputs.skip != '1'
+        run: pip install -r requirements.txt
+
+      - name: Extract templates bundle
+        if: steps.guard.outputs.skip != '1'
+        run: |
+          test -f templates_data.tar.gz
+          tar -xzf templates_data.tar.gz -C app
+          ls app/templates_data | head -5
+          echo "templates extracted: $(ls app/templates_data | wc -l)"
+
+      - name: Restore persistent state (db + user bots)
+        if: steps.guard.outputs.skip != '1'
+        run: |
+          mkdir -p data bots_storage
+          bash scripts/state_sync.sh pull
+
+      - name: Run TikZoom (polling mode)
+        if: steps.guard.outputs.skip != '1'
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          FERNET_KEY: ${{ secrets.FERNET_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TIKZOOM_POLL: "1"
+          TIKZOOM_SANDBOX: host
+          PORT: "8080"
+        run: |
+          timeout 330m python -m uvicorn app.main:app --host 127.0.0.1 --port 8080 || true
+
+      - name: Save persistent state
+        if: always() && steps.guard.outputs.skip != '1'
+        run: |
+          mkdir -p data bots_storage
+          bash scripts/state_sync.sh push
