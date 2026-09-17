@@ -1,0 +1,21 @@
+INFO:     Started server process [2347]
+INFO:     Waiting for application startup.
+2026-09-17 18:24:19,307 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8697646564:AAEr7EU-tV5yTUAVl1FRpak_g6xXf9VDp14/getMe "HTTP/1.1 200 OK"
+2026-09-17 18:24:19,308 [INFO] app.main: main bot: @XOAU_J_bot (id=8697646564)
+2026-09-17 18:24:19,331 [INFO] app.main: bot emoji loaded: custom
+2026-09-17 18:24:19,858 [INFO] httpx: HTTP Request: GET https://m-c-v-m-bot-default-rtdb.asia-southeast1.firebasedatabase.app/users.json "HTTP/1.1 200 OK"
+2026-09-17 18:24:20,210 [INFO] app.import_firebase_users: Firebase users found: 575
+2026-09-17 18:24:20,591 [INFO] app.main: Firebase import: total=575 imported=0 skipped=575 errors=0
+2026-09-17 18:24:20,595 [INFO] app.firebase_sync: firebase: FIREBASE_SERVICE_ACCOUNT_JSON not set — sync disabled
+2026-09-17 18:24:20,599 [INFO] app.main: AI auto-heal loop scheduled
+2026-09-17 18:24:20,599 [INFO] app.main: startup complete (port=8080)
+2026-09-17 18:24:20,600 [INFO] app.auto_heal: AI auto-heal loop started (interval=120s)
+2026-09-17 18:24:20,600 [INFO] app.main: starting polling loop
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8080 (Press CTRL+C to quit)
+2026-09-17 18:24:20,603 [WARNING] app.runner: TIKZOOM_SANDBOX='host' -> host subprocess runner (sandbox_shim active)
+2026-09-17 18:24:20,745 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8697646564:AAEr7EU-tV5yTUAVl1FRpak_g6xXf9VDp14/deleteWebhook "HTTP/1.1 200 OK"
+2026-09-17 18:24:21,069 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8697646564:AAEr7EU-tV5yTUAVl1FRpak_g6xXf9VDp14/setChatMenuButton "HTTP/1.1 400 Bad Request"
+2026-09-17 18:24:21,069 [WARNING] app.main: setChatMenuButton failed: setChatMenuButton: Bad Request: menu button Web App URL 'https://localhost/app/?v=20260917182420-fb77ae' is invalid: Wrong HTTP URL
+2026-09-17 18:24:45,890 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8697646564:AAEr7EU-tV5yTUAVl1FRpak_g6xXf9VDp14/getUpdates "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:55560 - "GET /healthz HTTP/1.1" 200 OK
