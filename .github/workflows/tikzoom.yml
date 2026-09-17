@@ -69,6 +69,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TIKZOOM_POLL: "1"
           TIKZOOM_SANDBOX: host
+          PUBLIC_BASE_URL: ""
           PORT: "8080"
         run: |
           mkdir -p data
